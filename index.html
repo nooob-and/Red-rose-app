@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to the Garden</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ff0033 !important;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #terminal-text {
+            font-size: 22px;
+            color: #ff0033 !important; 
+            margin-bottom: 20px;
+            text-align: center;
+            width: 80%;
+            height: 60px;
+            text-shadow: 0 0 10px rgba(255, 0, 51, 0.9);
+            z-index: 100;
+        }
+
+        #rose-image {
+            width: 250px;
+            height: 250px;
+            object-fit: contain;
+            margin-bottom: 30px;
+            display: none; 
+            filter: drop-shadow(0 0 15px #ff0033);
+            border-radius: 10px;
+            transition: all 0.1s ease;
+            z-index: 90;
+        }
+
+        #gate-33d-stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none; 
+            z-index: 10; 
+            perspective: 1200px;
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+        }
+
+        .gate-panel {
+            width: 50vw;
+            height: 100vh;
+            background-image: url('gate.png');
+            background-repeat: no-repeat;
+            background-color: #000000;
+            transition: transform 5.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .gate-door-left {
+            background-size: 200% 100%;
+            background-position: left center;
+            transform-origin: left center; 
+            border-right: 1px solid rgba(255, 0, 51, 0.3);
+        }
+
+        .gate-door-right {
+            background-size: 200% 100%;
+            background-position: right center;
+            transform-origin: right center; 
+            border-left: 1px solid rgba(255, 0, 51, 0.3);
+        }
+
+        .swing-left-action { transform: rotateY(-85deg); }
+        .swing-right-action { transform: rotateY(85deg); }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 15px #ff0033) brightness(1); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 35px #ff0033) brightness(1.3); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 15px #ff0033) brightness(1); }
+        }
+
+        .animating-rose { animation: pulseGlow 1s infinite ease-in-out; }
+
+        @keyframes horrorFlicker {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 30px #ffffff) contrast(1.5) invert(0); transform: scale(1); }
+            25% { opacity: 0.1; filter: drop-shadow(0 0 5px #ff0033) contrast(2) invert(1); transform: scale(0.98); }
+            50% { opacity: 0.8; filter: drop-shadow(0 0 40px #ffffff) contrast(1) invert(0); transform: scale(1.03); }
+            75% { opacity: 0.2; filter: drop-shadow(0 0px #000000) contrast(3); transform: scale(0.95); }
+        }
+
+        .flickering { animation: horrorFlicker 0.12s infinite; }
+
+        #download-link {
+            z-index: 100; 
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        #download-btn {
+            display: none;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.85); 
+            border: 1px solid #0066cc;
+            color: #0066cc !important;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            padding: 12px 20px;
+            text-decoration: underline;
+            box-shadow: 0 0 15px rgba(0, 102, 204, 0.4);
+            border-radius: 4px;
+        }
+
+        #download-btn:hover {
+            color: #3399ff !important;
+            border-color: #3399ff;
+            box-shadow: 0 0 25px rgba(0, 102, 204, 0.7);
+        }
+
+        .credits {
+            position: absolute;
+            bottom: 10px;
+            font-size: 10px;
+            color: #444444;
+            text-align: center;
+            width: 100%;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="terminal-text" style="color: #ff0033 !important;"></div>
+    
+    <!-- FIXED: Changed back to a standard image element pointing directly to your local file -->
+    <img id="rose-image" src="Rose.png" alt="Red Rose">
+    
+    <a href="https://github.com" id="download-link">
+        <button id="download-btn" onclick="startSequence(event)">http://redrose.internal</button>
+    </a>
+
+    <div id="gate-33d-stage">
+        <div id="g-door-left" class="gate-panel gate-door-left"></div>
+        <div id="g-door-right" class="gate-panel gate-door-right"></div>
+    </div>
+
+    <audio id="audio-gate" src="gate.mp3" preload="auto"></audio>
+    <audio id="audio-scream" src="scream.mp3" preload="auto"></audio>
+    <audio id="audio-error" src="error.mp3" preload="auto"></audio>
+
+    <div class="credits">
+        This app is a non-commercial fan-made homage/parody inspired by the 'Red Rose' TV series (BBC/Netflix).
+    </div>
+
+    <script>
+        const textElement = document.getElementById('terminal-text');
+        const roseImage = document.getElementById('rose-image');
+        const downloadBtn = document.getElementById('download-btn');
+        const gateStage = document.getElementById('gate-33d-stage');
+        const gDoorLeft = document.getElementById('g-door-left');
+        const gDoorRight = document.getElementById('g-door-right');
+        
+        const audioGate = document.getElementById('audio-gate');
+        const audioScream = document.getElementById('audio-scream');
+        const audioError = document.getElementById('audio-error');
+
+        const message = "We have been waiting for you. Open the gates.";
+        let index = 0;
+
+        let audioCtx = null;
+        let computerOscillator = null;
+        let computerGain = null;
+
+        function typeText() {
+            if (index < message.length) {
+                textElement.innerHTML += message.charAt(index);
+                index++;
+                setTimeout(typeText, 70); 
+            } else {
+                downloadBtn.style.display = 'block';
+            }
+        }
+
+        window.onload = typeText;
+
+        function playComputerHumSound() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            computerOscillator = audioCtx.createOscillator();
+            computerGain = audioCtx.createGain();
+            
+            computerOscillator.type = 'sine';
+            computerOscillator.frequency.setValueAtTime(180, audioCtx.currentTime); 
+            computerGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            
+            computerOscillator.connect(computerGain);
+            computerGain.connect(audioCtx.destination);
+            computerOscillator.start();
+        }
+
+        function startSequence(event) {
+            event.preventDefault();
+            const link = document.getElementById('download-link').href;
+            downloadBtn.style.display = 'none';
+            
+            gateStage.style.display = 'flex';
+            
+            try {
+                audioGate.volume = 1.0;
+                audioGate.currentTime = 0;
+                audioGate.play();
+            } catch(e) { console.log(e); }
+            
+            textElement.innerHTML = "OPENING THE GATES...";
+            
+            setTimeout(() => {
+                gDoorLeft.classList.add('swing-left-action');
+                gDoorRight.classList.add('swing-right-action');
+            }, 30);
+
+            setTimeout(() => {
+                gateStage.style.opacity = '0';
+                try { audioGate.pause(); } catch(e){}
+            }, 3500);
+
+            setTimeout(() => {
+                gateStage.style.display = 'none'; 
+                textElement.innerHTML = "ESTABLISHING CONNECTION...";
+                roseImage.style.display = 'block'; 
+                roseImage.classList.add('animating-rose');
+                
+                playComputerHumSound();
+
+                setTimeout(() => {
+                    roseImage.classList.remove('animating-rose');
+                    
+                    if (computerOscillator) { try { computerOscillator.stop(); } catch(e){} }
+                    
+                    try {
+                        audioScream.volume = 1.0;
+                        audioScream.currentTime = 0;
+                        audioScream.play();
+                    } catch(e){}
+
+                    // FIXED: Changed image source cleanly using the element source attribute property
+                    roseImage.src = "glitch.png";
+                    roseImage.classList.add('flickering');
+
+                    document.body.style.backgroundColor = "#110000";
+                    textElement.innerHTML = "SYSTEM CORRUPTED. DISCONNECTING...";
+                    textElement.style.color = "#ffffff";
+
+                    const hiddenAnchor = document.createElement('a');
+                    hiddenAnchor.href = link;
+                    hiddenAnchor.download = "redrose_game.apk"; 
+                    document.body.appendChild(hiddenAnchor);
+                    hiddenAnchor.click();
+                    document.body.removeChild(hiddenAnchor);
+
+                    setTimeout(() => {
+                        roseImage.classList.remove('flickering');
+                        roseImage.style.filter = "drop-shadow(0 0 25px #ffffff) contrast(1.2)";
+                        roseImage.style.opacity = "1";
+                    }, 1500);
+
+setTimeout(() => {try { audioScream.pause(); } catch(e){}try {audioError.volume = 1.0;audioError.currentTime = 0;audioError.play();} catch(e){}}, 2000);setTimeout(() => {try { audioError.pause(); } catch(e){}window.location.href = "https://google.com";}, 7500);}, 5000);}, 4500);}</script>
+</body>
+</html>
